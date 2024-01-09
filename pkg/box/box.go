@@ -32,12 +32,14 @@ func (b *Box) Get(key string) (*Item, error) {
 
 	item, found := b.data[key]
 	if !found {
-		return &Item{}, NewOperationError(fmt.Sprintf("Item with key %s doesn't exist", key), KeyNotFound)
+		return nil,
+			NewOperationError(fmt.Sprintf("Item with key %s doesn't exist", key), KeyNotFound)
 	}
 
 	if item.isExpired() {
 		delete(b.data, key)
-		return &Item{}, NewOperationError(fmt.Sprintf("Item with key %s has already expired", key), TTLExpired)
+		return nil,
+			NewOperationError(fmt.Sprintf("Item with key %s has already expired", key), TTLExpired)
 	}
 
 	return item, nil
@@ -88,6 +90,14 @@ func (b *Box) Delete(key string) error {
 }
 
 type Option func(*Box)
+
+func WithInitialState(items []Item) func(*Box) {
+	return func(b *Box) {
+		for _, i := range items {
+			b.data[i.key] = &i
+		}
+	}
+}
 
 func New(options ...Option) *Box {
 	box := &Box{}
